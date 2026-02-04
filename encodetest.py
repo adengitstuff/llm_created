@@ -26,12 +26,17 @@ print(f" after:")
 print(string_whitespace_split)
 
 txt2 = "Hello, World. -- Test!"
+print(f" ==========")
+print(f" txt2 : {txt2}")
 result = re.split(r'([,.:;?_!"()\']|--|\s)', txt2)
+print(f" raw result: ")
+print(f" {result}")
 result = [item.strip() for item in result if item.strip()]
 print(f"")
 print("")
 print(f" Result 2:")
 print(f" {result}")
+print(f"=============" * 20)
 
 
 # step 3: apply to the entire short story!
@@ -55,3 +60,34 @@ for i, item in enumerate(vocabulary.items()):
     print(item)
     if i>=50: 
         break
+
+class SimpleTokenizerV1:
+    def __init__(self, vocab):
+        self.str_to_int = vocab
+        self.int_to_str = {integer:string for string, integer in vocab.items()}
+
+    def encode_text_to_token_int(self, text):
+        text_split_by_spaces = re.split(r'([,.?_!"()\']|--|\s)', text)
+        text_remove_whitespaces = [thing.strip() for thing in text_split_by_spaces if thing.strip()]
+        ids = [self.str_to_int[s] for s in text_remove_whitespaces]
+        return ids
+    
+    def decode_token_int_to_text(self, ids):
+        text = " ".join(self.int_to_str[i] for i in ids)
+        # this removes the space BEFORE punctuation:
+        text = re.sub(r'\s+([,.?!"()\'])', r'\1', text)
+        return text
+    
+
+print(f" test tokenizer steps")
+tokenizerx = SimpleTokenizerV1(vocabulary) # from the sample text. 
+texttest = """"It's the last he painted, you know,"
+            Mrs. Gisburn said with pardonable pride."""
+print(f" len of texttest: {len(texttest)}")
+textids = tokenizerx.encode_text_to_token_int(texttest)
+print(f" len of textids: {len(textids)}")
+print(textids)
+
+print(f" ~~~~~~~~~~~~~~ Decode step:")
+texts_from_ids = tokenizerx.decode_token_int_to_text(textids)
+print(texts_from_ids)
