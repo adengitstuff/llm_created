@@ -1,4 +1,8 @@
 import urllib.request
+import tiktoken
+from importlib.metadata import version
+
+print("tiktoken version:", version("tiktoken"))
 
 url = ("https://raw.githubusercontent.com/rasbt/"
  "LLMs-from-scratch/main/ch02/01_main-chapter-code/"
@@ -91,3 +95,64 @@ print(textids)
 print(f" ~~~~~~~~~~~~~~ Decode step:")
 texts_from_ids = tokenizerx.decode_token_int_to_text(textids)
 print(texts_from_ids)
+
+
+
+
+print(f" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+print(f" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+
+print(f" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+
+
+all_tokens = sorted(list(set(all_words_in_text)))
+all_tokens.extend(["<|endoftext|>", "<|unk|>"])
+vocab = {token:integer for integer,token in enumerate(all_tokens)}
+print(len(vocab.items()))
+
+for i, thing in enumerate(list(vocab.items())[-5:]):
+    print(thing)
+
+class SimpleTokenizerV2:
+    def __init__(self, vocab):
+        self.str_to_int = vocab
+        self.int_to_str = { i:s for s,i in vocab.items()}
+
+    def encode(self, text):
+        preprocessed = re.split(r'([,.:;?_!"()\']|--|\s)', text)
+        preprocessed = [
+        item.strip() for item in preprocessed if item.strip()
+        ]
+        preprocessed = [item if item in self.str_to_int
+        else "<|unk|>" for item in preprocessed]
+        ids = [self.str_to_int[s] for s in preprocessed]
+        return ids
+
+    def decode(self, ids):
+        text = " ".join([self.int_to_str[i] for i in ids])
+        text = re.sub(r'\s+([,.:;?!"()\'])', r'\1', text)
+        return text
+    
+atext1 = "Hello, do you like tea?"
+atext2 = "In the sunlit terraces of the palace."
+btext = " <|endoftext|> ".join((atext1, atext2))
+print(btext)
+
+#now tokenize new on vocab:
+tokenizer2 = SimpleTokenizerV2(vocab)
+print(f"{tokenizer2.encode(btext)}")
+print(tokenizer2.decode(tokenizer2.encode(btext)))
+
+
+# test tiktoken
+tokenizer3 = tiktoken.get_encoding("gpt2")
+
+
+print(f"=====")
+text5 = (
+    "Okay, this is sample text. I'm going to test the BPE in TikToken! Let's test"
+)
+intsfrombpe = tokenizer3.encode(text5)
+print(text5)
+print(intsfrombpe)
+print(f"{tokenizer3.decode(intsfrombpe)}")
