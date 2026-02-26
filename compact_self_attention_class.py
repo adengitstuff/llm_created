@@ -1,5 +1,8 @@
 import torch.nn as nn
 import torch
+
+# trhis is the implementaiton before utilizing linear layers
+#
 class SelfAttention_v1(nn.Module):
     def __init__(self, d_in, d_out):
         super().__init__()
