@@ -2,7 +2,6 @@ import tiktoken
 from sliding_tensor_dataloader import create_dataloader_1
 import torch
 from architecture import createdLLM, text_to_token_ids, token_ids_to_text, generate_text_simple
-from gpt_download import download_and_load_gpt2
 import numpy as np
 
 
@@ -275,7 +274,7 @@ print("Token embedding weight tensor dimensions:", params_gpt["wte"].shape)
 torch.manual_seed(123)
 token_ids = generate_text_simple(
  model=pretrained,
- input_tokens=text_to_token_ids("The most important thing I could tell this user is", tokenizer).to(device),
+ input_tokens=text_to_token_ids("Wireless signals and systems are", tokenizer).to(device),
  new_tokens_max=25,
  context_length_max=CONFIG_TEST_355M["context_length"],
  #top_k=50,
