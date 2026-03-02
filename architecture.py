@@ -40,40 +40,23 @@ class createdLLM(nn.Module):
         logits = self.out_head(x)
         return logits
     
+# declare helpers!
 
-torch.manual_seed(123)
-model = createdLLM(TEST_CONFIG)
+def text_to_token_ids(text, tokenizer):
+    encoded = tokenizer.encode(text, allowed_special={'<|endoftext|>'})
+    encoded_tensor = torch.tensor(encoded).unsqueeze(0) # add batch
+    return encoded_tensor
 
-tokenizer = tiktoken.get_encoding("gpt2")
-batch = []
-txt1 = "Every effort moves you"
-txt2 = "Every day holds a"
-
-tokened1 = tokenizer.encode(txt1)
-tokened2 = tokenizer.encode(txt2)
-
-batch.append(torch.tensor(tokened1))
-print(f" Batch length: {len(batch)}")
-batch.append(torch.tensor(tokened2))
-batch = torch.stack(batch, dim=0) 
-print(f" Batch length: {len(batch)}")
-
-print(" Batch:")
-print(batch)
-
-createdModel = createdLLM(TEST_CONFIG)
-out = createdModel(batch)
-print("\nOutput shape:", out.shape)
-print(out)
-
-total_params = sum(p.numel() for p in model.parameters())
-print(f"Total number of parameters: {total_params:,}")
+def token_ids_to_text(token_ids, tokenizer):
+    flattened_token_ids = token_ids.squeeze(0)
+    flattened_token_ids = flattened_token_ids.tolist()
+    return tokenizer.decode(flattened_token_ids)
 
 
 def generate_text_simple(model, input_tokens, new_tokens_max, context_length_max): 
     print(f" In function!")
     for _ in range(new_tokens_max): 
-        print(f" In for loop")
+        #print(f" In for loop")  # lol! this is crazy
         input_sliced = input_tokens[:, -context_length_max:] # the first index here is the batch dim! really important lol! 
         with torch.no_grad():
             logits = model(input_sliced)
@@ -85,32 +68,76 @@ def generate_text_simple(model, input_tokens, new_tokens_max, context_length_max
 
     return input_tokens # lol
 
-
-start_context = "Hello, I am"
-encoded = tokenizer.encode(start_context)
-print(F" encoded sentence: {encoded}")
-
-encoded_tokens = torch.tensor(encoded).unsqueeze(0) # add batch dim
-print(f" Tensor encoded! Shape: {encoded_tokens.shape}")
+if __name__ == "__main__":
 
 
-# Let's go!
-model.eval()
+    torch.manual_seed(123)
+    model = createdLLM(TEST_CONFIG)
 
-out2 = generate_text_simple(
-    model=model,
-    input_tokens=encoded_tokens,
-    new_tokens_max=6,
-    context_length_max=TEST_CONFIG["context_length"]
-)
+    tokenizer = tiktoken.get_encoding("gpt2")
+    batch = []
+    txt1 = "Every effort moves you"
+    txt2 = "Every day holds a"
 
-print(f" ~ ~ " * 50)
-print(f" *** drumroll again ***")
-print(f"  " * 50)
+    tokened1 = tokenizer.encode(txt1)
+    tokened2 = tokenizer.encode(txt2)
 
-print(f"Output: ", out2)
-print(f" Output length: ", len(out[0]))
+    batch.append(torch.tensor(tokened1))
+    print(f" Batch length: {len(batch)}")
+    batch.append(torch.tensor(tokened2))
+    batch = torch.stack(batch, dim=0) 
+    print(f" Batch length: {len(batch)}")
 
-decoded_text = tokenizer.decode(out2.squeeze(0).tolist())
-print(decoded_text)
-print(":) ")
+    print(" Batch:")
+    print(batch)
+
+    createdModel = createdLLM(TEST_CONFIG)
+    out = createdModel(batch)
+    print("\nOutput shape:", out.shape)
+    print(out)
+
+    total_params = sum(p.numel() for p in model.parameters())
+    print(f"Total number of parameters: {total_params:,}")
+
+    start_context = "Wireless is really cool - it's how technology talks to technology!"
+    encoded = tokenizer.encode(start_context)
+    print(F" encoded sentence: {encoded}")
+
+    ## extra, after adding helpers:
+    tokenizerx = tiktoken.get_encoding("gpt2")
+
+
+    encoded_tokens = torch.tensor(encoded).unsqueeze(0) # add batch dim
+    print(f" Tensor encoded! Shape: {encoded_tokens.shape}")
+
+
+    # Let's go!
+    model.eval()
+
+    out2 = generate_text_simple(
+        model=model,
+        input_tokens=encoded_tokens,
+        new_tokens_max=6,
+        context_length_max=TEST_CONFIG["context_length"]
+    )
+
+    print(f" ~ ~ " * 50)
+    print(f" *** drumroll again ***")
+    print(f"  " * 50)
+
+    print(f"Output: ", out2)
+    print(f" Output length: ", len(out[0]))
+
+    decoded_text = tokenizer.decode(out2.squeeze(0).tolist())
+    print(decoded_text)
+    print(":) ")
+
+
+    start_context_after_helpers = "Every effort moves you"
+    token_id_output = generate_text_simple(
+        model=model,
+        input_tokens=text_to_token_ids(start_context_after_helpers, tokenizerx),
+        new_tokens_max=10,
+        context_length_max=TEST_CONFIG["context_length"]
+    )
+    print(f" Output text \n", token_ids_to_text(token_id_output, tokenizerx))
