@@ -2,3 +2,5 @@ venv/
 gpt-2/
 4.66
 *.pt
+huggingface_read.txt
+*.pkl
