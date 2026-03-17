@@ -5,10 +5,10 @@ import matplotlib.pyplot as plt
 from sklearn.cluster import KMeans
 import joblib
 
-ds = load_dataset("jiovine/pixel-art-nouns-2k", split="train")
-print(ds)
-print(ds[0])  # see what one example looks like
-print(ds[0]['image'].size)  # check actual image dimensions
+#ds = load_dataset("jiovine/pixel-art-nouns-2k", split="train")
+#print(ds)
+#print(ds[0])  # see what one example looks like
+#print(ds[0]['image'].size)  # check actual image dimensions
 #ds[0]['image'].show()
 
 def show_npy_images(imges):
@@ -30,9 +30,9 @@ def load_and_resize(ds):
         images.append(np.array(img))                           #            the nearest input pixel for each output pixel
     return np.array(images)
 
-images = load_and_resize(ds)
-print(images.shape)  # should be (2000, 32, 32, 3)
-show_npy_images(images)
+#images = load_and_resize(ds)
+#print(images.shape)  # should be (2000, 32, 32, 3)
+#show_npy_images(images)
 
 
 def extract_patches_from_the_image(images):
@@ -52,8 +52,8 @@ def extract_patches_from_the_image(images):
     patches = patches.reshape(batch, 16, 8*8*3) # now, each patch is kind of like a linear layer projected it out - a 192-dim "embedding"!
     return patches  # [batch, 16, 192]
 
-patch_test = extract_patches_from_the_image(images)
-print(patch_test.shape)
+#patch_test = extract_patches_from_the_image(images)
+#print(patch_test.shape)
 
 def reshape_and_kmeans(patchesx):
     all_patches = patchesx.reshape(-1, 192) # collapse the batch dim
@@ -88,9 +88,9 @@ def tokenize_kmeans(path_to_kmeans_patches, patches_flattened):
     return token_sequences, kmeans
 
 
-first_token_sequences, kmeans_object = tokenize_kmeans("kmeans.pkl", patch_test)
+#first_token_sequences, kmeans_object = tokenize_kmeans("kmeans.pkl", patch_test)
 
-def decode_tokens_to_image_test(tokens, kmeans):
+def tokens_to_image_test(tokens, kmeans):
     patches = kmeans.cluster_centers_[tokens]  # (16, 192)
     patches = patches.reshape(4, 4, 8, 8, 3)   # 4x4 grid of 8x8 patches
     patches = patches.transpose(0, 2, 1, 3, 4) # put pixels back in order
@@ -98,8 +98,15 @@ def decode_tokens_to_image_test(tokens, kmeans):
     image = image.clip(0, 255).astype(np.uint8) # clean up float values
     return image
 
-# display it
-decoded = decode_tokens_to_image_test(first_token_sequences[0], kmeans_object)
-plt.imshow(decoded)
-plt.title("decoded sprite")
-plt.show()
+# # display it
+# decoded = decode_tokens_to_image_test(first_token_sequences[0], kmeans_object)
+# plt.imshow(decoded)
+# plt.title("decoded sprite")
+# plt.show()
+
+def imgs_to_tokens():
+    ds = load_dataset("jiovine/pixel-art-nouns-2k", split="train")
+    images = load_and_resize(ds)
+    patches = extract_patches_from_the_image(images)
+    token_sequence, _ = tokenize_kmeans("kmeans.pkl", patches)
+    return token_sequence
