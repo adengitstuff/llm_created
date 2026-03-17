@@ -2,8 +2,9 @@ from datasets import load_dataset
 from PIL import Image
 import numpy as np
 import matplotlib.pyplot as plt
-from sklearn.cluster import KMeans
+#from sklearn.cluster import KMeans
 import joblib
+from sklearn.cluster import MiniBatchKMeans
 
 #ds = load_dataset("jiovine/pixel-art-nouns-2k", split="train")
 #print(ds)
@@ -59,11 +60,18 @@ def reshape_and_kmeans(patchesx):
     all_patches = patchesx.reshape(-1, 192) # collapse the batch dim
     print(f" all_patches shape: {all_patches.shape}. should be [high number, 192]")
 
-    kmeans = KMeans(n_clusters=512, random_state=42, n_init=10)
+    new_kmeans_name = 'kmeans_2048_full.pkl'
+
+    # The CPU on my humble student rig is at 100%. Let me try 6 cores LOL
+    #kmeans = KMeans(n_clusters=512, random_state=42, n_init=10, n_jobs=6) 
+
+    # Testing the MiniBatchKmeans!
+    kmeans = MiniBatchKMeans(n_clusters=2048, random_state=42, batch_size=8000)
     kmeans.fit(all_patches) # The fact that this is this abstracted-away is really cool. "kmeans fit". Euclidean distance for pixels! 
 
     print(f" Done with reshape and kmeans")
-    joblib.dump(kmeans, 'kmeans.pkl')
+    joblib.dump(kmeans, new_kmeans_name)
+    return new_kmeans_name
 
 #reshape_and_kmeans(patch_test)
 #print(F" Done! Kmeans saved!")
@@ -80,12 +88,12 @@ def tokenize_kmeans(path_to_kmeans_patches, patches_flattened):
 
     patches_collapsed = patches_flattened.reshape(-1, 192)
     token_sequences = kmeans.predict(patches_collapsed)
-    token_sequences = token_sequences.reshape(2000, 16)
+    token_sequences = token_sequences.reshape(-1, 16) # change from reshape(2000, 16). try new full dataset size
     print(token_sequences.shape)  # (2000, 16)
 
     ## This is really cool: 
     print(token_sequences[0])     # what the integer-sprite looks like!
-    return token_sequences, kmeans
+    return token_sequences, kmeans # This returns the actual kmeans object
 
 
 #first_token_sequences, kmeans_object = tokenize_kmeans("kmeans.pkl", patch_test)
@@ -104,9 +112,19 @@ def tokens_to_image_test(tokens, kmeans):
 # plt.title("decoded sprite")
 # plt.show()
 
-def imgs_to_tokens():
-    ds = load_dataset("jiovine/pixel-art-nouns-2k", split="train")
-    images = load_and_resize(ds)
+## Editing to take in a char dataset path:
+def imgs_to_tokens(dataset_name="jiovine/pixel-art-nouns", kmeans_path="kmeans_2048_full.pkl"):
+    #ds = load_dataset("jiovine/pixel-art-nouns-2k", split="train")
+    dataset_chars = load_dataset(dataset_name, split="train")
+    images = load_and_resize(dataset_chars)
     patches = extract_patches_from_the_image(images)
-    token_sequence, _ = tokenize_kmeans("kmeans.pkl", patches)
+    token_sequence, _ = tokenize_kmeans(kmeans_path, patches)
     return token_sequence
+
+if __name__ == "__main__":
+    # the 49k parquet rows one... was there the entire time. Lol. Changed from "jiovine/pixel-art-nouns-2k" to:
+    character_dataset = load_dataset("jiovine/pixel-art-nouns", split="train")
+    npy_images = load_and_resize(character_dataset)
+    flatten_patches = extract_patches_from_the_image(npy_images)
+    full_kmeans_new = reshape_and_kmeans(flatten_patches)
+    # fresh_tokens, kmeans_full_loaded = tokenize_kmeans(full_kmeans_new, flatten_patches)
